@@ -1,3 +1,8 @@
+---
+name: daily-article
+description: Run the full word-of-the-day pipeline — pick next word, find Bilibili clips, render hero card, write Chinese article, push to WeChat draft, and record the publish.
+---
+
 # Daily Article Flow
 
 Runs the full word-of-the-day article pipeline. Execute each step in order.
