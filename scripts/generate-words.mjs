@@ -15,7 +15,9 @@ const WORDS_PATH = resolve(__dirname, '../data/words.json');
 // ── Tuneable constants ───────────────────────────────────────────────────────
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 const DEEPSEEK_MODEL   = 'deepseek-chat';
-const BATCH_SIZE       = 1000;
+const TOTAL_TARGET     = 1000;  // total words to generate
+const SUB_BATCH_SIZE   = 100;   // words per API call (keeps response within token limits)
+const MAX_TOKENS       = 8000;  // safe ceiling per call
 
 const SYSTEM_PROMPT = `You are a vocabulary curator for a Chinese audience learning English.
 Return ONLY a valid JSON array — no prose, no code fences, no extra keys.
@@ -26,10 +28,12 @@ Each element must be an object with exactly these keys:
 Focus on words useful to Chinese learners: practical everyday vocabulary,
 business English, academic words, and currently-discussed terms in tech/culture.`;
 
-const USER_PROMPT = `Generate ${BATCH_SIZE} diverse, learner-friendly English words.
+function makeUserPrompt(n) {
+  return `Generate ${n} diverse, learner-friendly English words.
 Mix difficulty levels (≈40% beginner, 40% intermediate, 20% advanced).
 For hot-topic words, set source to "hot-topic" and fill theme (e.g. "AI", "climate").
 Return the JSON array only.`;
+}
 // ────────────────────────────────────────────────────────────────────────────
 
 const apiKey = process.env.DEEPSEEK_API_KEY;
@@ -38,54 +42,65 @@ if (!apiKey) {
   process.exit(1);
 }
 
-// Parse --batch-size flag
+// Parse --batch-size flag (overrides TOTAL_TARGET)
 const batchSizeArg = process.argv.indexOf('--batch-size');
-const batchSize = batchSizeArg !== -1 ? parseInt(process.argv[batchSizeArg + 1], 10) : BATCH_SIZE;
+const totalTarget = batchSizeArg !== -1 ? parseInt(process.argv[batchSizeArg + 1], 10) : TOTAL_TARGET;
 
-console.log(`Calling DeepSeek API (batch size: ${batchSize})…`);
+async function fetchBatch(n) {
+  const res = await fetch(DEEPSEEK_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user',   content: makeUserPrompt(n) },
+      ],
+      temperature: 0.8,
+      max_tokens: MAX_TOKENS,
+      response_format: { type: 'json_object' },
+    }),
+  });
 
-const res = await fetch(DEEPSEEK_API_URL, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`,
-  },
-  body: JSON.stringify({
-    model: DEEPSEEK_MODEL,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user',   content: USER_PROMPT.replace(BATCH_SIZE.toString(), batchSize.toString()) },
-    ],
-    temperature: 0.8,
-    max_tokens: 16000,
-    response_format: { type: 'json_object' },
-  }),
-});
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`DeepSeek API error ${res.status}: ${body}`);
+  }
 
-if (!res.ok) {
-  const body = await res.text();
-  console.error(`DeepSeek API error ${res.status}: ${body}`);
-  process.exit(1);
-}
+  const json = await res.json();
+  const rawContent = json.choices?.[0]?.message?.content ?? '';
 
-const json = await res.json();
-const rawContent = json.choices?.[0]?.message?.content ?? '';
-
-let candidates;
-try {
   // DeepSeek may return { words: [...] } or a bare array
   const parsed = JSON.parse(rawContent);
-  candidates = Array.isArray(parsed) ? parsed : (parsed.words ?? Object.values(parsed)[0]);
-  if (!Array.isArray(candidates)) throw new Error('Expected array');
-} catch (err) {
-  console.error('Failed to parse DeepSeek response as JSON array:', err.message);
-  console.error('Raw content:', rawContent.slice(0, 500));
-  process.exit(1);
+  const arr = Array.isArray(parsed) ? parsed : (parsed.words ?? Object.values(parsed)[0]);
+  if (!Array.isArray(arr)) throw new Error('Expected array in response');
+  return arr;
+}
+
+// Split into sub-batches to avoid truncated JSON
+const numBatches = Math.ceil(totalTarget / SUB_BATCH_SIZE);
+console.log(`Generating ${totalTarget} words in ${numBatches} batches of ${SUB_BATCH_SIZE}…`);
+
+let allCandidates = [];
+for (let i = 0; i < numBatches; i++) {
+  const n = Math.min(SUB_BATCH_SIZE, totalTarget - i * SUB_BATCH_SIZE);
+  process.stdout.write(`  Batch ${i + 1}/${numBatches} (${n} words)… `);
+  try {
+    const batch = await fetchBatch(n);
+    allCandidates = allCandidates.concat(batch);
+    console.log(`got ${batch.length}`);
+  } catch (err) {
+    console.error(`FAILED: ${err.message}`);
+    console.error('Skipping this batch and continuing…');
+  }
 }
 
 const existing = await readWords(WORDS_PATH);
-const { updated, newCount, skippedCount } = mergeWords(existing, candidates);
+const { updated, newCount, skippedCount } = mergeWords(existing, allCandidates);
 await writeWords(WORDS_PATH, updated);
 
-console.log(`Done. ${newCount} new words added, ${skippedCount} skipped as duplicates.`);
+console.log(`\nDone. ${newCount} new words added, ${skippedCount} skipped as duplicates.`);
 console.log(`Total words in queue: ${updated.filter(w => w.status === 'available').length} available.`);
