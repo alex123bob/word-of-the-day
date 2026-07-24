@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "wenyan": {
+      "command": "npx",
+      "args": ["-y", "@wenyan-md/mcp"],
+      "env": {
+        "WECHAT_APP_ID": "${WECHAT_APP_ID}",
+        "WECHAT_APP_SECRET": "${WECHAT_APP_SECRET}"
+      }
+    },
+    "bilibili": {
+      "command": "npx",
+      "args": ["-y", "bilibili-mcp-js"]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "word-of-the-day",
+  "version": "0.1.0",
+  "type": "module",
+  "engines": { "node": ">=20.12" },
+  "scripts": {
+    "generate-words": "node scripts/generate-words.mjs",
+    "render-card": "node scripts/render-card.mjs",
+    "download-thumbnail": "node scripts/download-thumbnail.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.45.0"
+  },
+  "devDependencies": {}
+}

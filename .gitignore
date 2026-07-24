@@ -1,2 +1,6 @@
 .env
 node_modules/
+articles/assets/*.png
+articles/assets/*.jpg
+articles/assets/*.jpeg
+articles/assets/*.webp
