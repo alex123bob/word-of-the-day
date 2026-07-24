@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=800, initial-scale=1">
+  <link rel="stylesheet" href="./card.css">
+  <style>
+    body { width: 800px; height: 340px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="pair">
+      <span class="pair-word">{{WORD_A}}</span>
+      <span class="pair-separator">vs</span>
+      <span class="pair-word">{{WORD_B}}</span>
+    </div>
+    <div class="pair-gloss">用 {{WORD_A}} 表示{{GLOSS_A}}；用 {{WORD_B}} 表示{{GLOSS_B}}</div>
+    <div class="accent-line"></div>
+  </div>
+</body>
+</html>

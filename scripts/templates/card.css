@@ -1,0 +1,86 @@
+/* Noto Sans SC for CJK, Inter for Latin — both served from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+SC:wght@400;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #FAF7F2;
+  --primary:     #1A1A1A;
+  --secondary:   #666666;
+  --accent:      #C97A5A;
+  --font-latin:  'Inter', sans-serif;
+  --font-cjk:    'Noto Sans SC', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--primary);
+  font-family: var(--font-latin);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+.card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15% 10%;
+  text-align: center;
+}
+
+.word {
+  font-size: clamp(48px, 8vw, 80px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--primary);
+}
+
+.hook {
+  margin-top: 0.6em;
+  font-size: clamp(18px, 3vw, 28px);
+  font-weight: 400;
+  color: var(--secondary);
+  font-family: var(--font-cjk);
+  line-height: 1.5;
+  max-width: 80%;
+}
+
+.accent-line {
+  width: 48px;
+  height: 3px;
+  background: var(--accent);
+  margin: 1em auto;
+  border-radius: 2px;
+}
+
+/* Confusion-pair layout */
+.pair {
+  display: flex;
+  gap: 1.5em;
+  align-items: center;
+  margin-top: 0.8em;
+}
+.pair-word {
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 700;
+  color: var(--primary);
+}
+.pair-separator {
+  font-size: clamp(18px, 3vw, 28px);
+  color: var(--secondary);
+}
+.pair-gloss {
+  font-size: clamp(14px, 2.5vw, 20px);
+  color: var(--secondary);
+  font-family: var(--font-cjk);
+  margin-top: 0.4em;
+  line-height: 1.4;
+}
