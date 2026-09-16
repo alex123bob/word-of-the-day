@@ -45,3 +45,14 @@ jobs:
           git add data/words.json
           git diff --cached --quiet || git commit -m "chore(ci): replenish word queue [skip ci]"
           git push
+
+  keepalive:
+    name: Keepalive workflow
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write        # needed by gautamkrishnar/keepalive-workflow@v2 API mode
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: gautamkrishnar/keepalive-workflow@v2
