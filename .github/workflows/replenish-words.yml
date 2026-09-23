@@ -50,9 +50,20 @@ jobs:
     name: Keepalive workflow
     runs-on: ubuntu-latest
     permissions:
-      actions: write        # needed by gautamkrishnar/keepalive-workflow@v2 API mode
+      contents: write       # needed to push the keepalive commit
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      - uses: gautamkrishnar/keepalive-workflow@v2
+      - name: Push keepalive commit if repo has been idle
+        run: |
+          days_since=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          echo "Days since last commit: $days_since"
+          if [ "$days_since" -ge 50 ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "chore(ci): keepalive commit to prevent workflow suspension [skip ci]"
+            git push
+          fi
